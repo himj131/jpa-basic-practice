@@ -38,15 +38,13 @@ public class OrderRepository {
         List<Predicate> criteria = new ArrayList<>();
         //주문 상태 검색
         if(orderSearch.getOrderStatus() != null) {
-            Predicate status = cb.equal(o.get("status"),
-                orderSearch.getOrderStatus());
+            Predicate status = cb.equal(o.get("status"), orderSearch.getOrderStatus());
             criteria.add(status);
         }
         //회원 이름 검색
         if(StringUtils.hasText(orderSearch.getMemberName())) {
-            Predicate name =
-                cb.like(m.<String>get("name"), "%" +
-                    orderSearch.getMemberName() + "%");
+            Predicate name = cb.like(m.<String>get("name"),
+                "%" + orderSearch.getMemberName() + "%");
             criteria.add(name);
 
         }
@@ -56,12 +54,40 @@ public class OrderRepository {
     }
 
     public List<Order> findAllWithDelivery() {
-        return em.createQuery(
-            """
-                        select o from Order o
-                        join fetch o.member m
-                        join fetch o.delivery d
-                """, Order.class
-        ).getResultList();
+        return em.createQuery("""
+                    select o from Order o
+                    join fetch o.member m
+                    join fetch o.delivery d
+            """, Order.class).getResultList();
+    }
+
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery("""
+            select distinct o from Order o
+                    join fetch o.member m
+                    join fetch o.delivery d 
+                        """, Order.class).getResultList();
+    }
+
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery("""
+                     select distinct o from Order o
+                             join fetch o.member m
+                             join fetch o.delivery d 
+                                 """, Order.class).setFirstResult(offset).setMaxResults(limit)
+                 .getResultList();
+    }
+
+    public List<Order> findAllWithItem() {
+        return em.createQuery("""
+                     select distinct o from Order o
+                             join fetch o.member m
+                             join fetch o.delivery d 
+                             join fetch o.orderItems oi 
+                             join fetch oi.item i
+                                 """, Order.class)
+                 .setFirstResult(1) // 1:다 페치 조인 쿼리에서는 페이징 파라미터를 줘도 페이징 쿼리가 절.대. 안나간다.
+                 .setMaxResults(100).getResultList();
+
     }
 }
